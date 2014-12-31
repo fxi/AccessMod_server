@@ -1,7 +1,24 @@
-# this document is a step by step configuration file for a fresh ubuntu 14.04 VM
-# TODO : create docker version !
+#      ___                                  __  ___            __   ______
+#     /   |  _____ _____ ___   _____ _____ /  |/  /____   ____/ /  / ____/
+#    / /| | / ___// ___// _ \ / ___// ___// /|_/ // __ \ / __  /  /___ \  
+#   / ___ |/ /__ / /__ /  __/(__  )(__  )/ /  / // /_/ // /_/ /  ____/ /  
+#  /_/  |_|\___/ \___/ \___//____//____//_/  /_/ \____/ \__,_/  /_____/   
+#
+# Author : Fred Moser <moser.frederic@gmail.com>
+# Date : 30 december 2014
+#
+# Script for provisioning accessmod 5 server on VM created with Vagrant.
+# R, shiny-server and grass 7.0 (beta3) will be installed with their
+#  dependecies on a fresh ubuntu 14.04.
+# Grass and r.walk.accessmod are compiled from source, it could take a while.
+# TODO : create docker version
+# TODO : after development, clean unecessary packages 
+# TODO : avoid individual apt-get command
 
-# if any of the addition ppa is already present, skipping.
+
+
+# in case of multiple provisioning, skip some step.
+# if any of the additional ppa is already present, skipping.
 if [ `cat /etc/apt/sources.list | grep 'ubuntugis  \| grass-stable \| cran' | wc -l` -eq 0 ]
 then
   echo "adding ppa and key in /etc/apt/sources-list"
@@ -21,10 +38,9 @@ else
 fi
 
 # grass, R and geo tools
+# apt-get didn't like multiline arguments : sending one by one.
 sudo apt-get update
 sudo apt-get upgrade -y
-
-# apt-get.. to much failed attempt, new method: one by one.
 sudo apt-get install -y build-essential 
 sudo apt-get install -y curl 
 sudo apt-get install -y gdebi-core 
@@ -63,7 +79,6 @@ sudo apt-get install -y python-wxgtk2.8
 sudo apt-get install -y git
 
 # script to install shiny server.
-
 mkdir -p $HOME/downloads
 cd $HOME/downloads
 
@@ -95,16 +110,11 @@ else
   echo "Shiny-server already installed"
 fi
 
-# other package to downloads
-
-
+# R packages and dependencies of accessmod shiny to downloads
 sudo R -e "install.packages(c('shiny','rmarkdown','gdalUtils','spgrass6','raster','rgdal','tools','maps','R.utils','htmltools','shinysky','devtools','plyr'))"
 sudo  R -e "library(devtools);install_github('AnalytixWare/ShinySky')"
-#sudo  R -e "library(devtools);install_github('trestletech/shinyTable')"
 
 ## install accessmod shiny
-
-
 sudo mkdir -p /srv/shiny-server/data/grass
 sudo mkdir -p /srv/shiny-server/logs
 sudo touch /srv/shiny-server/logs/logs.txt
@@ -138,15 +148,15 @@ sudo CFLAGS="-O2 -Wall" LDFLAGS="-s" ./configure \
 
 sudo make
 sudo make install
-cd ..
+cd $HOME/downloads
 # compile r.walk.accessmod
 git clone https://github.com/fxi/rWalkAccessmod.git rWalkAccessmod
 cd rWalkAccessmod
 sudo make MODULE_TOPDIR=/usr/local/grass-7.0.0beta3
 
-
-
+# clean 
 apt-get autoclean
 apt-get autoremove
+rm -rf $HOME/downloads
 
 
