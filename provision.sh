@@ -117,7 +117,7 @@ sudo  R -e "devtools::install_github('AnalytixWare/ShinySky')"
 ## install accessmod shiny
 sudo mkdir -p /srv/shiny-server/data/grass
 sudo mkdir -p /srv/shiny-server/logs
-echo -e `date +"%Y-%m-%d"`"\tvagrant provisioning date"  > /srv/shiny-server/logs/logs.txt
+sudo echo -e `date +"%Y-%m-%d"`"\tvagrant provisioning date"  > /srv/shiny-server/logs/logs.txt
 sudo git clone https://github.com/fxi/accessModShiny.git /srv/shiny-server/accessmod
 # index.html : redirection. Could also be a welcome screen or something.
 # if no usage of this page is done, change config file (/etc/shiny-server/shiny-server.conf )
