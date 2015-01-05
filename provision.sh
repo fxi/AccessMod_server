@@ -112,13 +112,17 @@ fi
 
 # R packages and dependencies of accessmod shiny to downloads
 sudo R -e "install.packages(c('shiny','rmarkdown','gdalUtils','spgrass6','raster','rgdal','tools','maps','R.utils','htmltools','shinysky','devtools','plyr'))"
-sudo  R -e "library(devtools);install_github('AnalytixWare/ShinySky')"
+sudo  R -e "devtools::install_github('AnalytixWare/ShinySky')"
 
 ## install accessmod shiny
 sudo mkdir -p /srv/shiny-server/data/grass
 sudo mkdir -p /srv/shiny-server/logs
-sudo touch /srv/shiny-server/logs/logs.txt
-sudo git clone https://github.com/fxi/accessModShiny.git /srv/shiny-server/accessModShiny.git
+echo -e `date +"%Y-%m-%d"`"\tvagrant provisioning date"  > /srv/shiny-server/logs/logs.txt
+sudo git clone https://github.com/fxi/accessModShiny.git /srv/shiny-server/accessmod
+# index.html : redirection. Could also be a welcome screen or something.
+# if no usage of this page is done, change config file (/etc/shiny-server/shiny-server.conf )
+sudo echo "<html><head><meta http-equiv=\"refresh\" content=\"0; url=accessmod\"></head></html>" > /srv/shiny-server/index.html
+# shiny own the house now.
 sudo chown -R shiny:shiny /srv/shiny-server
 
 # install grass and r.walk.accessmod
