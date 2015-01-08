@@ -35,8 +35,7 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
   config.vm.hostname = "accessmod"
   # set sync folder config.vm.sync_folder "host", "guest"
   # config.vm.synced_folder "/Users/fxi/Public/share/maps", "/sharedFile"
-  # config.vm.synced_folder "/Users/fxi/accessMod5Link/github/accessmodServer.git", "/sharedConfig"
-
+  
   # http://serverfault.com/questions/495914/vagrant-slow-internet-connection-in-guest
   config.vm.provider "virtualbox" do |v|
     v.customize ["modifyvm", :id, "--nictype1", "virtio"]

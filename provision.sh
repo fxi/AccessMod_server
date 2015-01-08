@@ -110,6 +110,10 @@ else
   echo "Shiny-server already installed"
 fi
 
+# remove default shiny sample apps :
+sudo rm -rf /srv/shiny-server/*
+
+
 # R packages and dependencies of accessmod shiny to downloads
 sudo R -e "install.packages(c('shiny','rmarkdown','gdalUtils','spgrass6','raster','rgdal','tools','maps','R.utils','htmltools','shinysky','devtools','plyr'))"
 sudo  R -e "devtools::install_github('AnalytixWare/ShinySky')"
