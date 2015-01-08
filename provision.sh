@@ -5,7 +5,7 @@
 #  /_/  |_|\___/ \___/ \___//____//____//_/  /_/ \____/ \__,_/  /_____/   
 #
 # Author : Fred Moser <moser.frederic@gmail.com>
-# Date : 30 december 2014
+# Date : 7 january 2015
 #
 # Script for provisioning accessmod 5 server on VM created with Vagrant.
 # R, shiny-server and grass 7.0 (beta3) will be installed with their
