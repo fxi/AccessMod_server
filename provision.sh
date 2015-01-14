@@ -117,6 +117,7 @@ sudo rm -rf /srv/shiny-server/*
 # R packages and dependencies of accessmod shiny to downloads
 sudo R -e "install.packages(c('shiny','rmarkdown','gdalUtils','spgrass6','raster','rgdal','tools','maps','R.utils','htmltools','shinysky','devtools','plyr'))"
 sudo  R -e "devtools::install_github('AnalytixWare/ShinySky')"
+sudo  R -e "devtools::install_github('ebailey78/shinyBS')"
 
 ## install accessmod shiny
 sudo mkdir -p /srv/shiny-server/data/grass
