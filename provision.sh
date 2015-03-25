@@ -38,7 +38,7 @@ else
 fi
 
 # grass, R and geo tools
-# apt-get didn't like multiline arguments : sending one by one.
+# apt-get didn't like multiline arguments : sending one by one. NOTE: Why?
 sudo apt-get update
 sudo apt-get upgrade -y
 sudo apt-get install -y build-essential 
@@ -77,6 +77,7 @@ sudo apt-get install -y python-dev
 sudo apt-get install -y wx-common
 sudo apt-get install -y python-wxgtk2.8
 sudo apt-get install -y git
+sudo apt-get install -y libv8-dev #V8 JavaScript engine used by geojsonio package in R
 
 # script to install shiny server.
 mkdir -p $HOME/downloads
@@ -98,6 +99,7 @@ if [ `sudo dpkg-query  -l | grep shiny-server | wc -l` -eq 0 ]
 then
   echo "Download and install shiny-server"
 
+  # get the version to wget
   sudo wget --no-verbose https://s3.amazonaws.com/rstudio-shiny-server-os-build/ubuntu-12.04/x86_64/VERSION -O "version.txt" && \
     VERSION=$(cat version.txt)  && \
     sudo wget --no-verbose "https://s3.amazonaws.com/rstudio-shiny-server-os-build/ubuntu-12.04/x86_64/shiny-server-$VERSION-amd64.deb" -O ss-latest.deb && \
@@ -113,18 +115,18 @@ fi
 # remove default shiny sample apps :
 sudo rm -rf /srv/shiny-server/*
 
-
 # R packages and dependencies of accessmod shiny to downloads
-sudo R -e "install.packages(c('shiny','rmarkdown','gdalUtils','spgrass6','raster','rgdal','tools','maps','R.utils','htmltools','shinysky','devtools','plyr'))"
-sudo  R -e "devtools::install_github('AnalytixWare/ShinySky')"
-sudo  R -e "devtools::install_github('ebailey78/shinyBS')"
+sudo R -e "install.packages(c('shiny','rmarkdown','gdalUtils','rgrass7','raster','rgdal','tools','maps','R.utils','htmltools','devtools','plyr'))"
+sudo  R -e "devtools::install_github('fxi/AccessMod_leaflet-shiny')"
+sudo  R -e "devtools::install_github('rstudio/shinydashboard')"
+sudo  R -e "devtools::install_github('ropensci/geojsonio')"
 
 ## install accessmod shiny
 sudo mkdir -p /srv/shiny-server/data/grass
 sudo mkdir -p /srv/shiny-server/logs
 # set a time stamp if installation in logs..
 sudo echo -e `date +"%Y-%m-%d"`" \t vagrant provisioning date \t TRUE" > /srv/shiny-server/logs/logs.txt
-sudo git clone https://github.com/fxi/accessModShiny.git /srv/shiny-server/accessmod
+sudo git clone https://github.com/fxi/AccessMod_shiny.git /srv/shiny-server/accessmod
 # index.html : redirection. Could also be a welcome screen or something.
 # if no usage of this page is done, change config file (/etc/shiny-server/shiny-server.conf )
 sudo echo "<html><head><meta http-equiv=\"refresh\" content=\"0; url=accessmod\"></head></html>" > /srv/shiny-server/index.html
@@ -135,11 +137,12 @@ sudo chown -R shiny:shiny /srv/shiny-server
 mkdir -p $HOME/downloads
 cd $HOME/downloads
 
-wget http://grass.osgeo.org/grass70/source/grass-7.0.0beta3.tar.gz
-tar xvf grass-7.0.0beta3.tar.gz
-cd grass-7.0.0beta3/
-sudo ./configure
 
+wget http://grass.osgeo.org/grass70/source/grass-7.0.0.tar.gz
+# wget http://grass.osgeo.org/grass70/source/grass-7.0.0beta3.tar.gz
+tar xvf grass-7.0.0.tar.gz
+cd grass-7.0.0/
+sudo ./configure
 
 # flags as recommanded in http://grass.osgeo.org/grass70/source/INSTALL
 sudo CFLAGS="-O2 -Wall" LDFLAGS="-s" ./configure \
@@ -160,9 +163,9 @@ sudo make
 sudo make install
 cd $HOME/downloads
 # compile r.walk.accessmod
-git clone https://github.com/fxi/rWalkAccessmod.git rWalkAccessmod
-cd rWalkAccessmod
-sudo make MODULE_TOPDIR=/usr/local/grass-7.0.0beta3
+git clone https://github.com/fxi/AccessMod_r.walk.git AccessMod_r_walk
+cd AccessMod_r_walk
+sudo make MODULE_TOPDIR=/usr/local/grass-7.0.0
 
 # clean 
 apt-get autoclean
