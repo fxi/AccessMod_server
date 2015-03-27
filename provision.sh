@@ -116,28 +116,44 @@ fi
 sudo rm -rf /srv/shiny-server/*
 
 # R packages and dependencies of accessmod shiny to downloads
-sudo R -e "install.packages(c('shiny','rmarkdown','gdalUtils','rgrass7','raster','rgdal','tools','maps','R.utils','htmltools','devtools','plyr'))"
+sudo R -e "install.packages(c(
+'shiny',
+'rmarkdown',
+'gdalUtils',
+'rgrass7',
+'raster',
+'rgdal',
+'tools',
+'maps',
+'htmltools',
+'devtools',
+'plyr'
+))"
 sudo  R -e "devtools::install_github('fxi/AccessMod_leaflet-shiny')"
 sudo  R -e "devtools::install_github('rstudio/shinydashboard')"
 sudo  R -e "devtools::install_github('ropensci/geojsonio')"
+i
 
-## install accessmod shiny
-sudo mkdir -p /srv/shiny-server/data/grass
-sudo mkdir -p /srv/shiny-server/logs
+
 # set a time stamp if installation in logs..
 sudo echo -e `date +"%Y-%m-%d"`" \t vagrant provisioning date \t TRUE" > /srv/shiny-server/logs/logs.txt
-sudo git clone https://github.com/fxi/AccessMod_shiny.git /srv/shiny-server/accessmod
+
+## install accessmod shiny
+sudo su shiny
+mkdir -p /srv/shiny-server/data/grass
+mkdir -p /srv/shiny-server/logs
+git clone https://github.com/fxi/AccessMod_shiny.git /srv/shiny-server/accessmod
 # index.html : redirection. Could also be a welcome screen or something.
 # if no usage of this page is done, change config file (/etc/shiny-server/shiny-server.conf )
-sudo echo "<html><head><meta http-equiv=\"refresh\" content=\"0; url=accessmod\"></head></html>" > /srv/shiny-server/index.html
-# shiny own the house now.
+echo "<html><head><meta http-equiv=\"refresh\" content=\"0; url=accessmod\"></head></html>" > /srv/shiny-server/index.html
+exit
+
+# make sure all files are owned by shiny
 sudo chown -R shiny:shiny /srv/shiny-server
 
 # install grass and r.walk.accessmod
 mkdir -p $HOME/downloads
 cd $HOME/downloads
-
-
 wget http://grass.osgeo.org/grass70/source/grass-7.0.0.tar.gz
 # wget http://grass.osgeo.org/grass70/source/grass-7.0.0beta3.tar.gz
 tar xvf grass-7.0.0.tar.gz
