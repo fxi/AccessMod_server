@@ -52,10 +52,10 @@ sudo apt-get install -y r-base
 sudo apt-get install -y r-base-dev 
 sudo apt-get install -y lesstif2-dev 
 sudo apt-get install -y dpatch 
-sudo apt-get install -y libtiff4-dev 
+#sudo apt-get install -y libtiff4-dev 
 sudo apt-get install -y libfftw3-dev 
 sudo apt-get install -y libxmu-dev 
-sudo apt-get install -y libfreetype6-dev 
+#sudo apt-get install -y libfreetype6-dev 
 sudo apt-get install -y autoconf2.13 
 sudo apt-get install -y autotools-dev 
 sudo apt-get install -y doxygen 
@@ -64,7 +64,7 @@ sudo apt-get install -y flex
 sudo apt-get install -y bison 
 sudo apt-get install -y libgeos-dev 
 sudo apt-get install -y libgeos-3.4.2 -dev 
-sudo apt-get install -y libcairo2-dev 
+#sudo apt-get install -y libcairo2-dev 
 sudo apt-get install -y gdal-bin 
 sudo apt-get install -y libgdal1-dev  
 sudo apt-get install -y libgdal1-1.5.0 
@@ -72,10 +72,10 @@ sudo apt-get install -y libproj-dev
 sudo apt-get install -y libproj0 
 sudo apt-get install -y proj-data 
 sudo apt-get install -y libgsl0-dev
-sudo apt-get install -y python-numpy
-sudo apt-get install -y python-dev
-sudo apt-get install -y wx-common
-sudo apt-get install -y python-wxgtk2.8
+#sudo apt-get install -y python-numpy
+#sudo apt-get install -y python-dev
+#sudo apt-get install -y wx-common
+#sudo apt-get install -y python-wxgtk2.8
 sudo apt-get install -y git
 sudo apt-get install -y libv8-dev #V8 JavaScript engine used by geojsonio package in R
 
@@ -115,67 +115,124 @@ fi
 # remove default shiny sample apps :
 sudo rm -rf /srv/shiny-server/*
 
+
+
 # R packages and dependencies of accessmod shiny to downloads
-sudo R -e "install.packages(c(
-'shiny',
-'rmarkdown',
-'gdalUtils',
-'rgrass7',
-'raster',
-'rgdal',
-'tools',
-'maps',
-'htmltools',
-'devtools',
-'plyr'
-))"
+sudo R -e "install.packages(c(\
+  'shiny',\
+  'rmarkdown',\
+  'gdalUtils',\
+  'rgrass7',\
+  'raster',\
+  'rgdal',\
+  'rgeos',\
+  'rjson',\
+  'RSQLite',\
+  'gdata',\
+  'maps',\
+  'RSQLite',\
+  'htmltools',\
+  'devtools',\
+  'plyr'\
+  ))
+"
 sudo  R -e "devtools::install_github('fxi/AccessMod_leaflet-shiny')"
 sudo  R -e "devtools::install_github('rstudio/shinydashboard')"
 sudo  R -e "devtools::install_github('ropensci/geojsonio')"
-i
 
-
-# set a time stamp if installation in logs..
-sudo echo -e `date +"%Y-%m-%d"`" \t vagrant provisioning date \t TRUE" > /srv/shiny-server/logs/logs.txt
 
 ## install accessmod shiny
 sudo su shiny
 mkdir -p /srv/shiny-server/data/grass
 mkdir -p /srv/shiny-server/logs
 git clone https://github.com/fxi/AccessMod_shiny.git /srv/shiny-server/accessmod
+# save provisioning time in logsi
+echo -e `date +"%Y-%m-%d"`" \t log \t vagrant provisioning date" >> /srv/shiny-server/logs/logs.txt
 # index.html : redirection. Could also be a welcome screen or something.
 # if no usage of this page is done, change config file (/etc/shiny-server/shiny-server.conf )
 echo "<html><head><meta http-equiv=\"refresh\" content=\"0; url=accessmod\"></head></html>" > /srv/shiny-server/index.html
 exit
 
-# make sure all files are owned by shiny
-sudo chown -R shiny:shiny /srv/shiny-server
 
 # install grass and r.walk.accessmod
 mkdir -p $HOME/downloads
 cd $HOME/downloads
 wget http://grass.osgeo.org/grass70/source/grass-7.0.0.tar.gz
+# gist containig Makefile for GRASS without gui and WX dependents DIRS. TODO: this is certainly clumsy... Search in configure script how to remove all wxpython dependencies (temporal modules, scripts...?) instead !
+wget https://gist.githubusercontent.com/fxi/9cbe9223aa4dbcf01401/raw/8fb5b7f15fb90ebbade9b20dfe5aae22a813b725/Makefile
 # wget http://grass.osgeo.org/grass70/source/grass-7.0.0beta3.tar.gz
 tar xvf grass-7.0.0.tar.gz
+# remplace Makefile by the modified one.
+mv Makefile grass-7.0.0/Makefile
 cd grass-7.0.0/
-sudo ./configure
-
+# http://stackoverflow.com/questions/10132904/when-compiling-programs-to-run-inside-a-vm-what-should-march-and-mtune-be-set-t
 # flags as recommanded in http://grass.osgeo.org/grass70/source/INSTALL
-sudo CFLAGS="-O2 -Wall" LDFLAGS="-s" ./configure \
+CFLAGS="-O2 -Wall -march=x86-64 -mtune=native" LDFLAGS="-s" ./configure \
+  --without-opengl \
+  --without-wxwidgets \
+  --without-cairo \
+  --without-freetype \
+  --without-x \
+  --without-tiff \
+  --with-geos \
+  --disable-largefile \
   --with-cxx \
   --with-sqlite \
-  --with-blas \
-  --enable-largefile \
   --with-readline \
   --without-tcltk \
-  --with-freetype \
   --without-opengl \
-  --with-freetype-includes=/usr/include/freetype2 \
   --with-proj-share=/usr/share/proj \
   --without-x \
   --without-wxwidgets
 
-sudo make
+# configuration summary
+#GRASS is now configured for:  x86_64-unknown-linux-gnu
+#
+#Source directory:           /home/vagrant/downloads/grass-7.0.0
+#Build directory:            /home/vagrant/downloads/grass-7.0.0
+#Installation directory:     ${prefix}/grass-7.0.0
+#Startup script in directory:${exec_prefix}/bin
+#C compiler:                 gcc -O2 -Wall -march=x86-64 -mtune=native
+#C++ compiler:               c++ -g -O2
+#Building shared libraries:  yes
+#OpenGL platform:            none
+#
+#MacOSX application:         no
+#MacOSX architectures:
+#MacOSX SDK:
+#
+#BLAS support:               no
+#C++ support:                yes
+#Cairo support:              no
+#DWG support:                no
+#FFTW support:               yes
+#FreeType support:           no
+#GDAL support:               yes
+#GEOS support:               yes
+#LAPACK support:             no
+#Large File support (LFS):   yes
+#libLAS support:             no
+#MySQL support:              no
+#NetCDF support:             no
+#NLS support:                no
+#ODBC support:               no
+#OGR support:                yes
+#OpenCL support:             no
+#OpenGL support:             no
+#OpenMP support:             no
+#PNG support:                yes
+#POSIX thread support:       no
+#PostgreSQL support:         no
+#Readline support:           yes
+#Regex support:              yes
+#SQLite support:             yes
+#TIFF support:               no
+#wxWidgets support:          no
+#X11 support:                no
+#
+
+
+sudo make # no root access needed here... but permission error (in demolocation??) when installing custom module. Strange.
 sudo make install
 cd $HOME/downloads
 # compile r.walk.accessmod
@@ -184,8 +241,8 @@ cd AccessMod_r_walk
 sudo make MODULE_TOPDIR=/usr/local/grass-7.0.0
 
 # clean 
-apt-get autoclean
-apt-get autoremove
+sudo apt-get autoclean
+sudo apt-get autoremove -y
 rm -rf $HOME/downloads
 
 
