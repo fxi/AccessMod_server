@@ -5,7 +5,7 @@ This is the configuration files to configure a virtual private server providing 
 ## Usage
 
 ### Prerequisite  
-- Knowing how to install software on your computer.
+- Permission to install sofware on your computer.
 
 ### First step
 1. To use this virtual server on mac, linux or windows, clone or download this git repository from github to a folder on your computer (e.g. linux or mac `$HOME/vm/accessModServer` ;  windows `c:\Users\<yourname>\vm\accessModServer`  ) 
