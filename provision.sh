@@ -154,8 +154,10 @@ echo "Install AccessMod web app"
 sudo rm -rf /srv/shiny-server/accessmod 2> /dev/null
 sudo git clone https://github.com/fxi/AccessMod_shiny.git /srv/shiny-server/accessmod
 
-sudo unzip /srv/shiny-server/accessmod/demo/demo.zip
-sudo mv demo /srv/shiny-server/data/grass/demo
+# removed demo from base machine. instead, load manually demo in bare VM's accessmod:
+# this can be usefull to run all analysis once to check that everything working correctly.
+# sudo unzip /srv/shiny-server/accessmod/demo/demo.zip
+# sudo mv demo /srv/shiny-server/data/grass/demo
 
 sudo echo "<html><head><meta http-equiv=\"refresh\" content=\"0; url=accessmod\"></head></html>" > $HOME/index.html
 sudo echo echo -e `date +"%Y-%m-%d"`" \t log \t vagrant provisioning date" > $HOME/logs.txt
