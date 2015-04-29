@@ -88,6 +88,8 @@
   sudo apt-get install -y libv8-dev #V8 JavaScript engine used by geojsonio package in R
   sudo apt-get install -y sqlite
 
+sudo git config --global user.email "f@fxi.io"
+sudo git config --global user.name "fxi (accessmod server)"
 
 
 
@@ -133,49 +135,30 @@
   sudo mkdir -p /srv/shiny-server/data/grass
   sudo mkdir -p /srv/shiny-server/data/cache
   sudo mkdir -p /srv/shiny-server/logs
-  sudo mkdir -p /srv/shiny-server/libs
   sudo mkdir -p /srv/shiny-server/help
 
-  # R package and dependecies
-
-  sudo Rscript -e "install.packages(c('devtools','shiny','RSQLite'))"
-  sudo Rscript -e "devtools::install_github('fxi/AccessMod_leaflet-shiny')"
-  sudo Rscript -e "devtools::install_github('rstudio/shinydashboard')"
-
-
-  # R packages and dependencies of accessmod shiny to downloads
-  sudo Rscript -e "install.packages(lib='/srv/shiny-server/libs',c('htmltools','rmarkdown','gdalUtils','rgrass7','raster','rgdal','rgeos','RSQLite','gdata','maps','plyr','pingr','V8','data.table','maptools','dplyr','gistr','magrittr','haven', 'openxlsx', 'readODS'))"
+  # R package and dependecies. Main package will be installed with packrat.
+  sudo Rscript -e "install.packages(c('devtools'))"
+  sudo Rscript -e "devtools::install_github('hadley/devtools')"
+  sudo Rscript -e "devtools::install_github('rstudio/packrat')"
 
 
-#fi;
+echo "Install AccessMod web app and dependencies using packrat."
 
-
-echo "Install AccessMod web app"
+# remove old version of exist
 sudo rm -rf /srv/shiny-server/accessmod 2> /dev/null
 sudo git clone https://github.com/fxi/AccessMod_shiny.git /srv/shiny-server/accessmod
-
-# removed demo from base machine. instead, load manually demo in bare VM's accessmod:
-# this can be usefull to run all analysis once to check that everything works correctly.
-# sudo unzip /srv/shiny-server/accessmod/demo/demo.zip
-# sudo mv demo /srv/shiny-server/data/grass/demo
-
-sudo echo "<html><head><meta http-equiv=\"refresh\" content=\"0; url=accessmod\"></head></html>" > $HOME/index.html
-sudo echo echo -e `date +"%Y-%m-%d"`" \t log \t vagrant provisioning date" > $HOME/logs.txt
-sudo mv $HOME/index.html /srv/shiny-server/index.html
-sudo mv $HOME/logs.txt /srv/shiny-server/logs/logs.txt
-
+#packrat test version
+#sudo git clone -b packrat https://github.com/fxi/AccessMod_shiny.git /srv/shiny-server/accessmod-packrat
+cd /srv/shiny-server/accessmod
+sudo R --vanilla --slave -f packrat/init.R --args --bootstrap-packrat
+cd -
+# create index html for accessmod redirection
+sudo echo "<html><head><meta http-equiv=\"refresh\" content=\"0; url=accessmod\"></head></html>" > /srv/shiny-server/index.html
+sudo echo echo -e `date +"%Y-%m-%d"`" \t log \t vagrant provisioning date" > /srv/shiny-server/logs/logs.txt
 sudo chown -R shiny:shiny /srv/shiny-server/
 
 
-#
-#sudo su shiny << EOF 
-#echo "Cloning AccessMod to /srv/shiny-server/accessmod"
-#git clone https://github.com/fxi/AccessMod_shiny.git /srv/shiny-server/accessmod
-## save provisioning time in logs
-#echo -e `date +"%Y-%m-%d"`" \t log \t vagrant provisioning date" >> /srv/shiny-server/logs/logs.txt
-## index.html : redirection. Could also be a welcome screen or something.
-## if no usage of this page is done, change config file (/etc/shiny-server/shiny-server.conf )
-#EOF
 
 echo "Compile and install grass"
 
