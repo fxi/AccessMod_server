@@ -41,8 +41,9 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
   config.vm.hostname = "accessmod"
   # set sync folder config.vm.sync_folder "host", "guest"
   # config.vm.synced_folder "/Users/fxi/Public/share/maps", "/sharedFile"
-  # Disable default folder sync : not needed.
+  # Disable default folder sync : not needed and cause trouble if vm is exported
   config.vm.synced_folder ".", "/vagrant", disabled: true
+  #config.vm.synced_folder ".", "/vagrant", disabled: false
   
   # Additional setup 
   config.vm.provider "virtualbox" do |v|

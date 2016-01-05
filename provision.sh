@@ -155,7 +155,7 @@ sudo R --vanilla --slave -f packrat/init.R --args --bootstrap-packrat
 cd -
 # create index html for accessmod redirection
 sudo echo "<html><head><meta http-equiv=\"refresh\" content=\"0; url=accessmod\"></head></html>" > /srv/shiny-server/index.html
-sudo echo echo -e `date +"%Y-%m-%d"`" \t log \t vagrant provisioning date" > /srv/shiny-server/logs/logs.txt
+sudo echo -e `date +"%Y-%m-%d"`" \t log \t vagrant provisioning date" > /srv/shiny-server/logs/logs.txt
 sudo chown -R shiny:shiny /srv/shiny-server/
 
 
@@ -165,14 +165,14 @@ echo "Compile and install grass"
 # install grass and r.walk.accessmod
 mkdir -p $HOME/downloads
 cd $HOME/downloads
-wget http://grass.osgeo.org/grass70/source/grass-7.0.0.tar.gz
+wget http://grass.osgeo.org/grass70/source/grass-7.0.1.tar.gz
 # gist containig Makefile for GRASS without gui and WX dependents DIRS. TODO: this is certainly clumsy... Search in configure script how to remove all wxpython dependencies (temporal modules, scripts...?) instead !
 wget https://gist.githubusercontent.com/fxi/9cbe9223aa4dbcf01401/raw/8fb5b7f15fb90ebbade9b20dfe5aae22a813b725/Makefile
 # wget http://grass.osgeo.org/grass70/source/grass-7.0.0beta3.tar.gz
-tar xvf grass-7.0.0.tar.gz
+tar xvf grass-7.0.1.tar.gz
 # remplace Makefile by the modified one.
-mv Makefile grass-7.0.0/Makefile
-cd grass-7.0.0/
+mv Makefile grass-7.0.1/Makefile
+cd grass-7.0.1/
 # http://stackoverflow.com/questions/10132904/when-compiling-programs-to-run-inside-a-vm-what-should-march-and-mtune-be-set-t
 # flags as recommanded in http://grass.osgeo.org/grass70/source/INSTALL
 CFLAGS="-O2 -Wall -march=x86-64 -mtune=native" LDFLAGS="-s" ./configure \
@@ -246,8 +246,7 @@ cd $HOME/downloads
 # compile r.walk.accessmod
 git clone https://github.com/fxi/AccessMod_r.walk.git AccessMod_r_walk
 cd AccessMod_r_walk
-sudo make MODULE_TOPDIR=/usr/local/grass-7.0.0
-
+sudo make MODULE_TOPDIR=/usr/local/grass-7.0.1
 
 
 
@@ -272,8 +271,9 @@ echo "|     |  _|  _| -_|_ -|_ -| | | | . | . |  |_  |" >> /etc/issue
 echo "|__|__|___|___|___|___|___|_|_|_|___|___|  |___|" >> /etc/issue
 echo "                                                " >> /etc/issue
 echo "#-----------------------------------------------#" >> /etc/issue
-echo " To launch AcessMod:" >> /etc/issue
-echo " Type this URL in a browser or launch AccessMod_client" >> /etc/issue
+echo " THIS IS A DEVELOPMENT SERVER" >> /etc/issue
+echo " To launch AccessMod:" >> /etc/issue
+echo " Type this URL in a modern browser" >> /etc/issue
 echo " http://localhost:8080">> /etc/issue
 echo "#-----------------------------------------------#" >> /etc/issue
 echo " Please report any issue :" >> /etc/issue
@@ -289,8 +289,18 @@ sudo mv accessmodmessage /etc/network/if-up.d/accessmodmessage
 
 
 # clean 
-sudo apt-get autoclean
+sudo apt-get autoclean -y
 sudo apt-get autoremove -y
 rm -rf $HOME/downloads
+
+# Remove APT files
+find /var/lib/apt -type f | sudo  xargs rm -f
+
+# Remove Linux headers
+sudo rm -rf /usr/src/linux-headers*
+
+# update time zone
+sudo mv /vagrant/updateTz.sh /etc/init.d/updateTz.sh
+sudo chmod +x /etc/init.d/updateTz.sh
 
 
