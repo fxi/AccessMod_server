@@ -14,10 +14,10 @@ This is the configuration files to configure a virtual private server providing 
 ### Linux and Mac
 1. open a terminal and go to accessmod server repository. (e.g. cd `$HOME/vm/accessModServer`)
 2. type : `vagrant up` (this could take a while to complete)
-3. open a browser (chrome, safari, firefox, opera) and go to http://localhost:8080/accessModShiny.git/
+3. open a browser (chrome, safari, firefox, opera) and go to http://localhost:8080
 
 ### Windows
 1. Navigate to the accessmod server repository (e.g. `c:\Users\<yourname>\vm\accessModServer`)
 2. Holding the shift key, right click on the folder, then chose "open command window here"
 3. type: `vagrant up` (this could take a while to complete)
-4. open a browser (chrome, safari, firefox, opera) and go to http://localhost:8080/accessModShiny.git/
+4. open a browser (chrome, safari, firefox, opera) and go to http://localhost:8080
