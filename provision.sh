@@ -5,18 +5,14 @@
 #  /_/  |_|\___/ \___/ \___//____//____//_/  /_/ \____/ \__,_/  /_____/   
 #
 # Author : Fred Moser <moser.frederic@gmail.com>
-# Date : 7 january 2016
+# Date : 3.11.2016
 #
 # Script for provisioning accessmod 5 server on VM created with Vagrant.
-#  dependecies on a fresh ubuntu 14.04.
+#  dependecies on a fresh ubuntu 16.04.
 # Grass and r.walk.accessmod are compiled from source, it could take a while.
-# TODO : create docker version
-# TODO : after development, clean unecessary packages 
-# TODO : avoid individual apt-get command
 
 
 set -e
-
 
 #
 # simple way to add repository (not in a ppa: form) and add corresponding key.
@@ -45,7 +41,9 @@ function addToAptSource
   fi
 }
 
+#
 # print a message to console with 
+#
 function printMsg 
 {
   echo $(for i in $(seq 1 80);do echo -n "-";done;);  
@@ -53,7 +51,9 @@ function printMsg
   echo $(for i in $(seq 1 80);do echo -n "-";done;);
 }
 
-
+#
+# Set and create main directory
+#
 dirReceipts="/home/vagrant/receipts"
 dirDownloads="/home/vagrant/downloads"
 dirShinyApp="/srv/shiny-server"
@@ -61,8 +61,8 @@ dirAccessmod="$dirShinyApp/accessmod"
 dirData="$dirShinyApp/data"
 dirLogs="$dirShinyApp/logs"
 dirHelp="$dirShinyApp/help"
-dirCache="$dirData/cache"
-dirGrass="$dirData/grass"
+dirDataCache="$dirData/cache"
+dirDataGrass="$dirData/grass"
 
 mkdir -p $dirReceipts
 mkdir -p $dirDownloads
@@ -70,8 +70,8 @@ mkdir -p $dirShinyApp
 mkdir -p $dirData
 mkdir -p $dirLogs
 mkdir -p $dirHelp
-mkdir -p $dirCache
-mkdir -p $dirGrass
+mkdir -p $dirDataCache
+mkdir -p $dirDataGrass
 
 
 #if [ 0 -eq 1 ] 
@@ -93,13 +93,6 @@ then
   addToAptSource \
     "deb http://ppa.launchpad.net/nginx/stable/ubuntu xenial main" \
     "http://keyserver.ubuntu.com:11371/pks/lookup?op=get&search=0x00A6F0A3C300EE8C"
-  # GRASS
-#  addToAptSource \
-    #"deb http://ppa.launchpad.net/grass/grass-stable/ubuntu xenial main" \
-    #"http://keyserver.ubuntu.com:11371/pks/lookup?op=get&search=0x94B6677A26D57B27"
- # addToAptSource \
-    #"deb-src http://ppa.launchpad.net/grass/grass-stable/ubuntu xenial main" \
-    #"http://keyserver.ubuntu.com:11371/pks/lookup?op=get&search=0x94B6677A26D57B27"
 
   touch $dirReceipts/apt_source
 else
@@ -158,6 +151,31 @@ else
   printMsg "receipt apt_depedencies found, skipping "
 fi
 
+
+
+#
+# Copy demo data
+#
+if [[ ! -e $dirReceipts/demo_data ]]
+then
+  printMsg "copy demo data"
+  # download
+wget --no-verbose "https://rawgit.com/fxi/AccessMod_server/153cfdda2776c81fe94e66c3ee1100b0fd412fcc/demo/demo.tar.gz?raw=true" -O data.tar.gz
+  # untar
+tar xvfz data.tar.gz 
+mv demo $dirDataGrass 
+chown -R shiny:shiny $dirDataGrass 
+  # clean
+  rm data.tar.gz
+  # create receipt
+  touch $dirReceipts/demo_data
+else
+  printMsg "demo_data receipt found skipping"
+fi
+
+
+
+
 #
 # GIT settings
 #
@@ -174,7 +192,6 @@ fi
 #
 # install shiny, devtools and packrat
 #
-
 if [[ ! -e $dirReceipts/r_dep ]]
 then 
   printMsg "No receipt r_dep. Install shiny, devtools and packrat"
@@ -191,7 +208,6 @@ fi
 #
 # SHINY SERVER
 #
-
 if [[ ! -e $dirReceipts/r_shiny_server ]]
 then
   printMsg "No receipt r_shiny_server, add and install shiny server"
@@ -214,7 +230,6 @@ fi
 #
 # AccessMod 
 #
-
 if [[ ! -e $dirReceipts/accessmod ]]
 then
   printMsg "No receipt accessmod, install or update"
@@ -242,9 +257,8 @@ else
 fi
 
 #
-# Install custom grass
+# GRASS
 #
-
 if [[ ! -e $dirReceipts/grass ]]
 then
   printMsg "Compile and install grass"
@@ -334,9 +348,8 @@ else
 fi
 
 #
-# R walk accessmod
+# r.walk accessmod
 #
-
 if [[ ! -e $dirReceipts/accessmod_r_walk ]]
 then
   printMsg "install accessmod_r_walk"
@@ -350,19 +363,6 @@ else
   printMsg "accessmod_r_walk receipt found skipping"
 fi
 
-
-
-#
-# Copy demo data
-#
-
-if [[ ! -e $dirReceipts/demo_data ]]
-then
-  printMsg "copy and "
-  touch $dirReceipts/demo_data
-else
-  printMsg "demo_data receipt found skipping"
-fi
 
 
 
