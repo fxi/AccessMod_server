@@ -18,7 +18,7 @@ VAGRANTFILE_API_VERSION = "2"
 Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
   # Every Vagrant virtual environment requires a box to build off of.
   #config.vm.box = "https://cloud-images.ubuntu.com/xenial/current/xenial-server-cloudimg-amd64-vagrant.box"
-  config.vm.box = "gbarbieru/xenial";
+  config.vm.box = "ubuntu/trusty64";
  
   # name and basic config of the VM
   config.vm.provider "virtualbox" do |v|

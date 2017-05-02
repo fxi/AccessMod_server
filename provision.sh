@@ -64,6 +64,11 @@ dirHelp="$dirShinyApp/help"
 dirDataCache="$dirData/cache"
 dirDataGrass="$dirData/grass"
 
+
+branchAccessMod="devel"
+remoteAccessMod="https://github.com/fxi/AccessMod_shiny.git"
+
+
 mkdir -p $dirReceipts
 mkdir -p $dirDownloads
 mkdir -p $dirShinyApp
@@ -81,17 +86,17 @@ then
   printMsg "receipt apt_source not found, adding apt sources "
   # UBUNTU GIS
   addToAptSource \
-    "deb http://ppa.launchpad.net/ubuntugis/ubuntugis-unstable/ubuntu xenial main" \
+    "deb http://ppa.launchpad.net/ubuntugis/ubuntugis-unstable/ubuntu trusty main" \
     "http://keyserver.ubuntu.com/pks/lookup?op=get&search=0x089EBE08314DF160" 
 
  # R
   addToAptSource \
-    "deb http://cran.univ-lyon1.fr/bin/linux/ubuntu xenial/" \
+    "deb http://cran.univ-lyon1.fr/bin/linux/ubuntu trusty/" \
     "http://keyserver.ubuntu.com/pks/lookup?op=get&search=0xE084DAB9"
 
  # NGINX
   addToAptSource \
-    "deb http://ppa.launchpad.net/nginx/stable/ubuntu xenial main" \
+    "deb http://ppa.launchpad.net/nginx/stable/ubuntu trusty main" \
     "http://keyserver.ubuntu.com:11371/pks/lookup?op=get&search=0x00A6F0A3C300EE8C"
 
   touch $dirReceipts/apt_source
@@ -138,7 +143,7 @@ then
     proj-bin \
     proj-data \
     libproj-dev \
-    libproj9 \
+    libproj0 \
     libgsl0-dev \
     git-core \
     libv8-dev \
@@ -150,31 +155,6 @@ then
 else
   printMsg "receipt apt_depedencies found, skipping "
 fi
-
-
-
-#
-# Copy demo data
-#
-if [[ ! -e $dirReceipts/demo_data ]]
-then
-  printMsg "copy demo data"
-  # download
-wget --no-verbose "https://rawgit.com/fxi/AccessMod_server/153cfdda2776c81fe94e66c3ee1100b0fd412fcc/demo/demo.tar.gz?raw=true" -O data.tar.gz
-  # untar
-tar xvfz data.tar.gz 
-mv demo $dirDataGrass 
-chown -R shiny:shiny $dirDataGrass 
-  # clean
-  rm data.tar.gz
-  # create receipt
-  touch $dirReceipts/demo_data
-else
-  printMsg "demo_data receipt found skipping"
-fi
-
-
-
 
 #
 # GIT settings
@@ -189,21 +169,21 @@ else
   printMsg "git_setting found, skipping"
 fi
 
+
 #
-# install shiny, devtools and packrat
+# R SHINY
 #
-if [[ ! -e $dirReceipts/r_dep ]]
+if [[ ! -e $dirReceipts/r_checkpoint ]]
 then 
-  printMsg "No receipt r_dep. Install shiny, devtools and packrat"
+  printMsg "No receipt r_checkpoint, install it"
   echo 'options("repos"="http://cran.rstudio.com")' >> /etc/R/Rprofile.site
-  Rscript -e "install.packages(c('devtools'))"
-  Rscript -e "devtools::install_github('hadley/devtools')"
-  Rscript -e "devtools::install_github('rstudio/shiny')"
-  Rscript -e "devtools::install_github('rstudio/packrat')"
-  touch $dirReceipts/r_dep
+  Rscript -e "install.packages(c('checkpoint'))"
+  Rscript -e "install.packages(c('shiny'))"
+  touch $dirReceipts/r_checkpoint
 else
-  printMsg "receipt r_dep found, skipping"
+  printMsg "receipt r_checkpoint found, skipping"
 fi
+
 
 #
 # SHINY SERVER
@@ -234,27 +214,49 @@ if [[ ! -e $dirReceipts/accessmod ]]
 then
   printMsg "No receipt accessmod, install or update"
 
-
   if [[ ! -e $dirAccessmod/server.R ]]
   then
     printMsg "Accessmod server.R does not exists, clone and init"
 
-    sudo git clone --depth 1 https://github.com/fxi/AccessMod_shiny.git $dirAccessmod 
+    git clone -b $branchAccessMod --depth 1 --single-branch  $remoteAccessMod  $dirAccessmod 
     cd $dirAccessmod 
-    Rscript packrat/init.R --bootstrap-packrat
-    sudo echo "<html><head><meta http-equiv=\"refresh\" content=\"0; url=accessmod\"></head></html>" > $dirShinyApp/index.html
-    sudo echo -e `date +"%Y-%m-%d"`" \t log \t vagrant provisioning date" > $dirLogs/logs.txt
+    echo "<html><head><meta http-equiv=\"refresh\" content=\"0; url=accessmod\"></head></html>" > $dirShinyApp/index.html
+    echo -e `date +"%Y-%m-%d"`" \t log \t vagrant provisioning date" > $dirLogs/logs.txt
   else 
     cd $dirAccessmod
-    git pull
-    Rscript -e "packrat::restore()" 
+    git pull origin $branchAccessMod
+    git checkout $branchAccessMod 
     touch restart.txt
   fi
+
   sudo chown -R shiny:shiny $dirShinyApp
+  su shiny -c 'Rscript global.R'
   touch $dirReceipts/accessmod
 else 
   printMsg "receipt accessmod found skipping"
 fi
+
+
+#
+# Copy demo data
+#
+if [[ ! -e $dirReceipts/demo_data ]]
+then
+  printMsg "copy demo data"
+  # download
+  wget --no-verbose "https://rawgit.com/fxi/AccessMod_server/153cfdda2776c81fe94e66c3ee1100b0fd412fcc/demo/demo.tar.gz?raw=true" -O data.tar.gz
+  # untar
+  tar xvfz data.tar.gz 
+  mv demo $dirDataGrass 
+  chown -R shiny:shiny $dirDataGrass 
+  # clean
+  rm data.tar.gz
+  # create receipt
+  touch $dirReceipts/demo_data
+else
+  printMsg "demo_data receipt found skipping"
+fi
+
 
 #
 # GRASS
@@ -265,14 +267,14 @@ then
 
   # install grass and r.walk.accessmod
   cd $dirDownloads 
-  wget http://grass.osgeo.org/grass70/source/grass-7.0.1.tar.gz
+  wget http://grass.osgeo.org/grass72/source/grass-7.2.0.tar.gz
   # gist containig Makefile for GRASS without gui and WX dependents DIRS. TODO: this is certainly clumsy... Search in configure script how to remove all wxpython dependencies (temporal modules, scripts...?) instead !
   wget https://gist.githubusercontent.com/fxi/9cbe9223aa4dbcf01401/raw/8fb5b7f15fb90ebbade9b20dfe5aae22a813b725/Makefile
-  # wget http://grass.osgeo.org/grass70/source/grass-7.0.0beta3.tar.gz
-  tar xvf grass-7.0.1.tar.gz
+  # wget http://grass.osgeo.org/grass70/source/grass-7.2.0.tar.gz
+  tar xvf grass-7.2.0.tar.gz
   # remplace Makefile by the modified one.
-  mv Makefile grass-7.0.1/Makefile
-  cd grass-7.0.1/
+  mv Makefile grass-7.2.0/Makefile
+  cd grass-7.2.0/
   # http://stackoverflow.com/questions/10132904/when-compiling-programs-to-run-inside-a-vm-what-should-march-and-mtune-be-set-t
   # flags as recommanded in http://grass.osgeo.org/grass70/source/INSTALL
   CFLAGS="-O2 -Wall -march=x86-64 -mtune=native" LDFLAGS="-s" ./configure \
@@ -296,9 +298,9 @@ then
   #- configuration summary
   #-GRASS is now configured for:  x86_64-unknown-linux-gnu
   #-
-  #-Source directory:           /home/vagrant/downloads/grass-7.0.0
-  #-Build directory:            /home/vagrant/downloads/grass-7.0.0
-  #-Installation directory:     ${prefix}/grass-7.0.0
+  #-Source directory:           /home/vagrant/downloads/grass-7.2.0
+  #-Build directory:            /home/vagrant/downloads/grass-7.2.0
+  #-Installation directory:     ${prefix}/grass-7.2.0
   #-Startup script in directory:${exec_prefix}/bin
   #-C compiler:                 gcc -O2 -Wall -march=x86-64 -mtune=native
   #-C++ compiler:               c++ -g -O2
@@ -355,9 +357,10 @@ then
   printMsg "install accessmod_r_walk"
   cd $dirDownloads 
   # compile r.walk.accessmod
+  rm -rf AccessMod_r_walk
   git clone https://github.com/fxi/AccessMod_r.walk.git AccessMod_r_walk
   cd AccessMod_r_walk
-  sudo make MODULE_TOPDIR=/usr/local/grass-7.0.1
+  sudo make MODULE_TOPDIR=/usr/local/grass-7.2.0
   touch $dirReceipts/accessmod_r_walk
 else
   printMsg "accessmod_r_walk receipt found skipping"
@@ -415,30 +418,52 @@ fi
 
 #
 # Clean apt and download
-#
-if [[ 0 -eq 0 ]]
+# based on https://gist.github.com/justindowning/5670884
+# 
+if [[ ! -e $dirReceipts/clean_vm ]]
 then
-  printMsg "Clean apt and downloads"
-  # clean 
-  sudo apt-get autoclean -y
-  sudo apt-get autoremove -y
-  rm -rf $dirDownloads
+  apt-get -y autoremove
+  aptitude clean
+  aptitude autoclean
+  unset HISTFILE
+  [ -f /root/.bash_history ] && rm /root/.bash_history
+  [ -f /home/vagrant/.bash_history ] && rm /home/vagrant/.bash_history
 
-  # Remove APT files
-  find /var/lib/apt -type f | sudo  xargs rm -f
+  printMsg 'clean_vm Cleanup log files'
+  find /var/log -type f | while read f; do echo -ne '' > $f; done
 
-  # Remove Linux headers
-  sudo rm -rf /usr/src/linux-headers*
+  printMsg 'clean_vm Whiteout root'
+  count=`df --sync -kP / | tail -n1  | awk -F ' ' '{print $4}'`
+  let count--
+  dd if=/dev/zero of=/tmp/whitespace bs=1024 count=$count
+  rm /tmp/whitespace
+
+  printMsg 'clean_vm Whiteout /boot'
+  count=`df --sync -kP /boot | tail -n1 | awk -F ' ' '{print $4}'`
+  let count--
+  dd if=/dev/zero of=/boot/whitespace bs=1024 count=$count;
+  rm /boot/whitespace
+
+  printMsg 'clean_vm Whiteout swap'
+  sudo swapoff -a 
+  sudo swapon -a
+
+  printMsg 'clean_vm Zero out disk'
+  dd if=/dev/zero of=/EMPTY bs=1M > /dev/null 2>&1 || true
+  rm -f /EMPTY
+
+
+  touch $dirReceipts/clean_vm
+else
+  printMsg "cleam_vm receitp found, skipping"
 fi
-
-
 
 
 #
 # update time zone
 #
 
-if [[ -e $dirReceipts/update_time_zone ]]
+if [[ ! -e $dirReceipts/update_time_zone ]]
 then
   # based on http://askubuntu.com/questions/323131/setting-timezone-from-terminal
   printMsg "Update time zone script "
