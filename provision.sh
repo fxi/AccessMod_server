@@ -13,7 +13,6 @@
 
 
 set -e
-
 #
 # simple way to add repository (not in a ppa: form) and add corresponding key.
 # add-apt-repository can handle custom repo, but the key server option did not always work.
@@ -422,37 +421,78 @@ fi
 # 
 if [[ ! -e $dirReceipts/clean_vm ]]
 then
-  apt-get -y autoremove
-  aptitude clean
-  aptitude autoclean
+
+  # based on https://gist.github.com/flyinprogrammer/f70d11f6392f1d137e0c
+  
+  printMsg "clean_vm remove dowloads "
+  # Clean downloads
+  rm -rf $dirDownloads/*
+
+  printMsg "clean_vm clean locales"
+
+  # Tell installer to keep en_US
+  echo en_US > /etc/locale.gen 
+  # Install localepurge - NO dpkg
+  apt-get update 
+  DEBIAN_FRONTEND=noninteractive apt-get install -y localepurge
+  localepurge
+
+  printMsg "clean_vm remove packages"
+
+  apt-get remove -y \
+    pollinate \
+    overlayroot \
+    fonts-ubuntu-font-family-console \
+    cloud-init \
+    python-apport \
+    landscape-client \
+    juju \
+    chef \
+    open-vm-tools \
+    localepurge
+
+
+  # Remove APT cache
+  apt-get autoremove -y
+  apt-get clean -y
+  apt-get autoclean -y
+
+  printMsg "clean_vm remove apt files, docs, old kernels, history, logs"
+  # Remove APT files
+  find /var/lib/apt/lists -type f | xargs rm -f
+  # Clear cache
+  find /var/cache -type f -exec rm -rf {} \;
+  # Clear docs
+  shopt -s extglob
+  rm -rf /usr/share/doc-base/* 
+  # remove old kernels
+  dpkg --list | grep linux-image | awk '{ print $2 }' | sort -V | sed -n '/'`uname -r`'/q;p' | xargs sudo apt-get -y purge
+  # Remove bash history
   unset HISTFILE
-  [ -f /root/.bash_history ] && rm /root/.bash_history
-  [ -f /home/vagrant/.bash_history ] && rm /home/vagrant/.bash_history
+  rm -f /root/.bash_history
+  rm -f /home/vagrant/.bash_history
+  # Cleanup log files
+  find /var/log -type f | while read f; do echo -ne '' > $f; done;
 
-  printMsg 'clean_vm Cleanup log files'
-  find /var/log -type f | while read f; do echo -ne '' > $f; done
+  printMsg "clean_vm Write zero in free space"
 
-  printMsg 'clean_vm Whiteout root'
-  count=`df --sync -kP / | tail -n1  | awk -F ' ' '{print $4}'`
-  let count--
-  dd if=/dev/zero of=/tmp/whitespace bs=1024 count=$count
-  rm /tmp/whitespace
-
-  printMsg 'clean_vm Whiteout /boot'
-  count=`df --sync -kP /boot | tail -n1 | awk -F ' ' '{print $4}'`
-  let count--
-  dd if=/dev/zero of=/boot/whitespace bs=1024 count=$count;
-  rm /boot/whitespace
-
-  printMsg 'clean_vm Whiteout swap'
-  sudo swapoff -a 
-  sudo swapon -a
-
-  printMsg 'clean_vm Zero out disk'
+  # Zero free space to aid VM compression
   dd if=/dev/zero of=/EMPTY bs=1M > /dev/null 2>&1 || true
   rm -f /EMPTY
+  dd if=/dev/zero of=/run/EMPTY bs=1M > /dev/null 2>&1 || true
+  rm -f /run/EMPTY
+  dd if=/dev/zero of=/run/lock/EMPTY bs=1M > /dev/null 2>&1 || true
+  rm -f /run/lock/EMPTY
+  dd if=/dev/zero of=/run/shm/EMPTY bs=1M > /dev/null 2>&1 || true
+  rm -f /run/shm/EMPTY
+  dd if=/dev/zero of=/run/user/EMPTY bs=1M > /dev/null 2>&1 || true
+  rm -f /run/user/EMPTY
+  dd if=/dev/zero of=/dev/EMPTY bs=1M > /dev/null 2>&1 || true
+  rm -f /dev/EMPTY
+  dd if=/dev/zero of=/sys/fs/cgroup/EMPTY bs=1M > /dev/null 2>&1 || true
+  rm -f /sys/fs/cgroup/EMPTY
 
-
+  printMsg "clean_vm finished running clean script"
   touch $dirReceipts/clean_vm
 else
   printMsg "cleam_vm receitp found, skipping"
@@ -468,19 +508,27 @@ then
   # based on http://askubuntu.com/questions/323131/setting-timezone-from-terminal
   printMsg "Update time zone script "
   # check if there is heading space
-echo 'description "Update time zone"
-author "Fred Moser"
-version "0.0.1"
-start on net-device-up
-stop on runlevel [!2345]
-console output
-respawn
-script
-TZ=$(wget -qO - http://geoip.ubuntu.com/lookup | sed -n -e "s/.*<TimeZone>\(.*\)<\/TimeZone>.*/\1/p")
-export TZ
-exec su -s /bin/sh -c "su - timedatectl set-timezone $TZ"
-end script
-' > /etc/init/updateTz.conf
+  echo -e \
+    '#\n' \
+    '# This task is run on startup to set the system timezone\n'\
+    '#\n' \
+    '\n' \
+    'description    "set system timezone"\n' \
+    '\n' \
+    'start on (started networking)\n' \
+    '\n' \
+    '\n' \
+    'script\n' \
+    '    TZ=$(wget -qO - http://geoip.ubuntu.com/lookup | sed -n -e "s/.*<TimeZone>\(.*\)<\/TimeZone>.*/\1/p")\n' \
+    '    export TZ \n' \
+    '    /usr/bin/timedatectl set-timezone $TZ \n' \
+    'end script \n' \
+    > /etc/init/updateTz.conf
+
 else
   printMsg "update_time_zone receipt found, skiping"
 fi
+
+
+
+

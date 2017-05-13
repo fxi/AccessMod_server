@@ -13,12 +13,20 @@
 # Provisioning is done with provision.sh
 #
 
+#
+# Expect VAGRANT AUTOMATIC GUEST ADDITION
+# vagrant plugin install vagrant-vbguest
+#
+
+
 VAGRANTFILE_API_VERSION = "2"
 
 Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
   # Every Vagrant virtual environment requires a box to build off of.
   #config.vm.box = "https://cloud-images.ubuntu.com/xenial/current/xenial-server-cloudimg-amd64-vagrant.box"
-  config.vm.box = "ubuntu/trusty64";
+  config.vm.box = "https://cloud-images.ubuntu.com/vagrant/trusty/current/trusty-server-cloudimg-amd64-vagrant-disk1.box"
+  #config.vm.box = "ubuntu/trusty64";
+  #config.vm.box = "minimal/trusty64"
  
   # name and basic config of the VM
   config.vm.provider "virtualbox" do |v|
@@ -43,6 +51,8 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
     v.customize ["modifyvm", :id, "--natdnsproxy1", "on"]
     # select chipset (I/O controler hub) emulation to use. ich9 may be faster
     v.customize ["modifyvm", :id, "--chipset", "ich9"]
+    v.customize ["modifyvm", :id, "--usb", "off"]
+    v.customize ["modifyvm", :id, "--usbehci", "off"]
     end
 
 end
