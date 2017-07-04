@@ -7,7 +7,7 @@
 #  /_/  |_|\___/ \___/ \___//____//____//_/  /_/ \____/ \__,_/  /_____/   
 #                                                                         
 # Author : Fred Moser <moser.frederic@gmail.com>
-# Date : 3 april 2015
+# Date : 13.05.2017
 # 
 # Script to configure virtual box VM using Vagrant.
 # Provisioning is done with provision.sh
@@ -23,10 +23,7 @@ VAGRANTFILE_API_VERSION = "2"
 
 Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
   # Every Vagrant virtual environment requires a box to build off of.
-  #config.vm.box = "https://cloud-images.ubuntu.com/xenial/current/xenial-server-cloudimg-amd64-vagrant.box"
   config.vm.box = "https://cloud-images.ubuntu.com/vagrant/trusty/current/trusty-server-cloudimg-amd64-vagrant-disk1.box"
-  #config.vm.box = "ubuntu/trusty64";
-  #config.vm.box = "minimal/trusty64"
  
   # name and basic config of the VM
   config.vm.provider "virtualbox" do |v|
